@@ -44,6 +44,7 @@
         .search-container {
             margin-bottom: 2rem;
             position: relative;
+            max-width: 100%; /* 修正: 最大幅を制限 */
         }
         .search-container input {
             width: 100%;
@@ -51,6 +52,7 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
+            box-sizing: border-box; /* 修正: パディングを幅に含める */
         }
         .search-icon {
             position: absolute;
@@ -435,18 +437,24 @@
                     // コンテンツ部分
                     const content = document.createElement('div');
                     content.className = 'technique-content';
+                    content.id = `content-${technique.id}`; // 修正: ユニークIDを付与
                     content.innerHTML = technique.content;
                     
                     // 詳細表示トグル
                     const toggle = document.createElement('div');
                     toggle.className = 'technique-toggle';
+                    toggle.id = `toggle-${technique.id}`; // 修正: ユニークIDを付与
                     toggle.textContent = '詳細を表示 ▼';
                     
-                    // ヘッダーのクリックイベント
+                    // ヘッダーのクリックイベント - 修正
                     header.addEventListener('click', () => {
-                        const isActive = content.classList.contains('active');
-                        content.classList.toggle('active');
-                        toggle.textContent = isActive ? '詳細を表示 ▼' : '閉じる ▲';
+                        // 修正: このカード専用のコンテンツとトグルを取得
+                        const thisContent = document.getElementById(`content-${technique.id}`);
+                        const thisToggle = document.getElementById(`toggle-${technique.id}`);
+                        
+                        const isActive = thisContent.classList.contains('active');
+                        thisContent.classList.toggle('active');
+                        thisToggle.textContent = isActive ? '詳細を表示 ▼' : '閉じる ▲';
                     });
                     
                     // カードに要素を追加

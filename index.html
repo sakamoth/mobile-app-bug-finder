@@ -44,7 +44,7 @@
         .search-container {
             margin-bottom: 2rem;
             position: relative;
-            max-width: 100%; /* 修正: 最大幅を制限 */
+            max-width: 100%;
         }
         .search-container input {
             width: 100%;
@@ -52,7 +52,7 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
-            box-sizing: border-box; /* 修正: パディングを幅に含める */
+            box-sizing: border-box;
         }
         .search-icon {
             position: absolute;
@@ -130,31 +130,67 @@
             font-size: 0.9rem;
             margin: 0;
         }
-        .technique-content {
-            padding: 0 1.2rem 1.2rem;
-            border-top: 1px solid #f0f0f0;
+        
+        /* モーダル関連のスタイル - ここから新規追加 */
+        .modal-overlay {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
         }
-        .technique-content.active {
-            display: block;
+        
+        .modal-content {
+            background-color: white;
+            width: 80%;
+            max-width: 800px;
+            margin: 50px auto;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
-        .technique-content ul {
-            padding-left: 1.5rem;
-        }
-        .technique-content li {
-            margin-bottom: 0.5rem;
-        }
-        .technique-toggle {
-            text-align: center;
-            background-color: #f8f8f8;
-            padding: 0.6rem;
-            color: #3498db;
-            font-size: 0.8rem;
+        
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            color: #666;
             cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
         }
-        .technique-toggle:hover {
-            background-color: #f0f0f0;
+        
+        .modal-close:hover {
+            color: #333;
         }
+        
+        .modal-title {
+            margin-top: 0;
+            padding-right: 30px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .modal-description {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        .modal-body {
+            margin-top: 20px;
+        }
+        /* モーダル関連のスタイル - ここまで */
+        
         .progress-bar {
             margin-bottom: 1.5rem;
             background-color: white;
@@ -206,6 +242,10 @@
             }
             .category-btn {
                 white-space: nowrap;
+            }
+            .modal-content {
+                width: 95%;
+                margin: 30px auto;
             }
         }
         .github-corner:hover .octo-arm {
@@ -266,6 +306,16 @@
 
     <div class="no-results" id="no-results" style="display: none;">
         検索結果がありません。別のキーワードをお試しください。
+    </div>
+
+    <!-- モーダルダイアログ - 新規追加 -->
+    <div id="technique-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h2 class="modal-title" id="modal-title"></h2>
+            <p class="modal-description" id="modal-description"></p>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
     </div>
 
     <footer>
@@ -352,8 +402,41 @@
             });
         }
         
+        // モーダル関連の機能 - 新規追加
+        function showTechniqueModal(technique) {
+            // モーダルの内容を設定
+            document.getElementById('modal-title').textContent = technique.title;
+            document.getElementById('modal-description').textContent = technique.description;
+            document.getElementById('modal-body').innerHTML = technique.content;
+            
+            // モーダルを表示
+            const modal = document.getElementById('technique-modal');
+            modal.style.display = 'block';
+            
+            // スクロールを無効化
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('technique-modal');
+            modal.style.display = 'none';
+            
+            // スクロールを有効化
+            document.body.style.overflow = 'auto';
+        }
+        
         // メイン処理
         async function init() {
+            // モーダルの閉じるボタンのイベントを設定
+            document.querySelector('.modal-close').addEventListener('click', closeModal);
+            
+            // モーダルの外側をクリックしても閉じるように設定
+            document.getElementById('technique-modal').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeModal();
+                }
+            });
+            
             // データ読み込み
             const data = await loadData();
             const { categories, techniques } = data;
@@ -434,33 +517,16 @@
                     header.appendChild(description);
                     header.appendChild(checkboxContainer);
                     
-                    // コンテンツ部分
-                    const content = document.createElement('div');
-                    content.className = 'technique-content';
-                    content.id = `content-${technique.id}`; // 修正: ユニークIDを付与
-                    content.innerHTML = technique.content;
-                    
-                    // 詳細表示トグル
-                    const toggle = document.createElement('div');
-                    toggle.className = 'technique-toggle';
-                    toggle.id = `toggle-${technique.id}`; // 修正: ユニークIDを付与
-                    toggle.textContent = '詳細を表示 ▼';
-                    
-                    // ヘッダーのクリックイベント - 修正
-                    header.addEventListener('click', () => {
-                        // 修正: このカード専用のコンテンツとトグルを取得
-                        const thisContent = document.getElementById(`content-${technique.id}`);
-                        const thisToggle = document.getElementById(`toggle-${technique.id}`);
-                        
-                        const isActive = thisContent.classList.contains('active');
-                        thisContent.classList.toggle('active');
-                        thisToggle.textContent = isActive ? '詳細を表示 ▼' : '閉じる ▲';
+                    // ヘッダーのクリックイベント - モーダル表示に変更
+                    header.addEventListener('click', (e) => {
+                        // チェックボックスがクリックされた場合はモーダルを表示しない
+                        if (e.target !== checkbox && !checkbox.contains(e.target)) {
+                            showTechniqueModal(technique);
+                        }
                     });
                     
                     // カードに要素を追加
                     card.appendChild(header);
-                    card.appendChild(content);
-                    card.appendChild(toggle);
                     
                     // グリッドにカードを追加
                     techniqueGrid.appendChild(card);
@@ -476,6 +542,13 @@
             // 検索入力のイベントを設定
             searchInput.addEventListener('input', () => {
                 updateTechniqueList();
+            });
+            
+            // ESCキーでモーダルを閉じる
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
             });
             
             // 初期表示
